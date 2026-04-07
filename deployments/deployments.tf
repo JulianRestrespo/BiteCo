@@ -163,41 +163,62 @@ resource "aws_instance" "backend" {
               #!/bin/bash
               set -e
 
+              export DEBIAN_FRONTEND=noninteractive
+
               apt-get update -y
-              apt-get install -y python3-pip python3-venv git
+              apt-get install -y python3 python3-pip python3-venv git
 
               mkdir -p /apps
               cd /apps
 
               if [ ! -d BiteCo ]; then
-                git clone ${var.repository_url} BiteCo
+                git clone -b ${var.repository_branch} ${var.repository_url} BiteCo
               fi
 
-              cd BiteCo
+              cd /apps/BiteCo
               git fetch origin
               git checkout ${var.repository_branch}
               git pull origin ${var.repository_branch}
 
-              python3 -m venv venv
-              . venv/bin/activate
-              pip install --upgrade pip
-              pip install -r requirements.txt
+              python3 -m venv /apps/BiteCo/venv
+              /apps/BiteCo/venv/bin/pip install --upgrade pip
+              /apps/BiteCo/venv/bin/pip install -r /apps/BiteCo/requirements.txt
 
-              echo 'DJANGO_SECRET_KEY="biteco-secret-key"' >> /etc/environment
-              echo 'DEBUG="False"' >> /etc/environment
-              echo 'ALLOWED_HOSTS="*"' >> /etc/environment
-              echo 'INSTANCE_NAME="backend-${each.key}"' >> /etc/environment
-              echo 'USE_CACHE="True"' >> /etc/environment
-              echo 'CACHE_BACKEND="local"' >> /etc/environment
+              cat > /etc/biteco.env <<EOF
+              DJANGO_SECRET_KEY=biteco-secret-key
+              DEBUG=False
+              ALLOWED_HOSTS=*
+              INSTANCE_NAME=backend-${each.key}
+              USE_CACHE=True
+              CACHE_BACKEND=local
+              EOF
 
               set -a
-              . /etc/environment
+              . /etc/biteco.env
               set +a
 
               cd /apps/BiteCo
-              python manage.py migrate
+              /apps/BiteCo/venv/bin/python manage.py migrate
 
-              nohup /apps/BiteCo/venv/bin/gunicorn config.wsgi:application --bind 0.0.0.0:8000 > /var/log/biteco.log 2>&1 &
+              cat > /etc/systemd/system/biteco.service <<EOF
+              [Unit]
+              Description=BiteCo Django Gunicorn
+              After=network.target
+
+              [Service]
+              User=root
+              WorkingDirectory=/apps/BiteCo
+              EnvironmentFile=/etc/biteco.env
+              ExecStart=/apps/BiteCo/venv/bin/gunicorn config.wsgi:application --bind 0.0.0.0:8000
+              Restart=always
+
+              [Install]
+              WantedBy=multi-user.target
+              EOF
+
+              systemctl daemon-reload
+              systemctl enable biteco
+              systemctl restart biteco
               EOT
 
   tags = merge(local.common_tags, {
@@ -219,6 +240,8 @@ resource "aws_instance" "load_balancer" {
   user_data = <<-EOT
               #!/bin/bash
               set -e
+
+              export DEBIAN_FRONTEND=noninteractive
 
               apt-get update -y
               apt-get install -y nginx
@@ -244,6 +267,7 @@ resource "aws_instance" "load_balancer" {
               }
               NGINXCONF
 
+              nginx -t
               systemctl restart nginx
               systemctl enable nginx
               EOT
