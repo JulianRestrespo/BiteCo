@@ -1,54 +1,50 @@
-from reports.logic.report_logic import get_monthly_report
 from baselines.services.baseline_service import get_baseline_data
-
-
-THRESHOLD_MULTIPLIER = 1.2
-
-
-def find_service_baseline(service_name, baseline_services):
-    for service in baseline_services:
-        if service["name"] == service_name:
-            return service
-    return None
+from reports.services.report_service import get_report_data
 
 
 def detect_anomalies():
-    report = get_monthly_report()
     baseline_result = get_baseline_data()
+    report_result = get_report_data()
+
     baseline = baseline_result["data"]
+    report = report_result["data"]
 
     anomalies = []
 
-    if report["total_cost"] > baseline["total_cost_average"] * THRESHOLD_MULTIPLIER:
-        anomalies.append({
-            "type": "total_cost",
-            "message": "Total cost exceeds baseline by more than 20%",
-            "current_value": report["total_cost"],
-            "baseline_value": baseline["total_cost_average"]
-        })
+    baseline_services = {
+        service["name"]: service for service in baseline["services"]
+    }
 
     for service in report["services"]:
-        baseline_service = find_service_baseline(service["name"], baseline["services"])
+        service_name = service["name"]
 
-        if baseline_service is None:
+        if service_name not in baseline_services:
             continue
 
-        if service["cost"] > baseline_service["cost_average"] * THRESHOLD_MULTIPLIER:
+        baseline_service = baseline_services[service_name]
+
+        cost_limit = baseline_service["cost_average"] * 1.2
+        usage_limit = baseline_service["usage_average"] * 1.2
+
+        cost_anomaly = service["cost"] > cost_limit
+        usage_anomaly = service["usage"] > usage_limit
+
+        if cost_anomaly:
             anomalies.append({
                 "type": "service_cost",
-                "service": service["name"],
+                "service": service_name,
                 "message": "Service cost exceeds baseline by more than 20%",
                 "current_value": service["cost"],
-                "baseline_value": baseline_service["cost_average"]
+                "baseline_value": baseline_service["cost_average"],
             })
 
-        if service["usage"] > baseline_service["usage_average"] * THRESHOLD_MULTIPLIER:
+        if usage_anomaly:
             anomalies.append({
                 "type": "service_usage",
-                "service": service["name"],
+                "service": service_name,
                 "message": "Service usage exceeds baseline by more than 20%",
                 "current_value": service["usage"],
-                "baseline_value": baseline_service["usage_average"]
+                "baseline_value": baseline_service["usage_average"],
             })
 
     return {
@@ -56,5 +52,6 @@ def detect_anomalies():
         "anomaly_found": len(anomalies) > 0,
         "anomalies": anomalies,
         "alert_count": len(anomalies),
-        "baseline_cache_source": baseline_result["cache_source"]
+        "baseline_cache_source": baseline_result["cache_source"],
+        "report_cache_source": report_result["cache_source"],
     }

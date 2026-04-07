@@ -1,0 +1,4 @@
+Django==4.2.24
+django-redis==5.4.0
+redis==6.0.0
+gunicorn==23.0.0

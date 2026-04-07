@@ -1,10 +1,9 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.http import JsonResponse
-from baselines.logic.baseline_logic import get_daily_baseline
+from baselines.services.baseline_service import get_baseline_data
 
 
 def daily_baseline(request):
-    baseline = get_daily_baseline()
+    baseline_result = get_baseline_data()
+    baseline = baseline_result["data"]
+    baseline["cache_source"] = baseline_result["cache_source"]
     return JsonResponse(baseline)
