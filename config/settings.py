@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'baselines',
     'alerts',
     'security',
+    'availability',
     
 ]
 

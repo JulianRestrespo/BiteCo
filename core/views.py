@@ -5,6 +5,10 @@ from django.http import JsonResponse
 from core.utils.instance import get_instance_name
 
 
+from django.http import JsonResponse
+from core.utils.instance import get_instance_name
+
+
 def home(request):
     return JsonResponse({
         "message": "BiteCo API is running",
@@ -12,8 +16,13 @@ def home(request):
         "available_endpoints": [
             "/health/",
             "/reports/monthly/",
+            "/reports/managed/",
+            "/reports/managed/?force_failure=true",
             "/baselines/daily/",
-            "/alerts/check/"
+            "/alerts/check/",
+            "/availability/status/",
+            "/availability/simulate-failure/?mode=on",
+            "/availability/simulate-failure/?mode=off"
         ]
     })
 
