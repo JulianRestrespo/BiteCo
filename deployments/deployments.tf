@@ -185,7 +185,7 @@ resource "aws_instance" "backend" {
               /apps/BiteCo/venv/bin/pip install -r /apps/BiteCo/requirements.txt
 
               cat > /etc/biteco.env <<EOF
-              DJANGO_SECRET_KEY=biteco-secret-key
+              SECRET_KEY=biteco-secret-key
               DEBUG=False
               ALLOWED_HOSTS=*
               INSTANCE_NAME=backend-${each.key}
