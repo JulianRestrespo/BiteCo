@@ -3,8 +3,17 @@ import jwt
 from django.conf import settings
 from django.http import JsonResponse
 from .models import AuditLog, SecurityAlert
+import time
+import jwt
+from django.conf import settings
+from django.http import JsonResponse
+from .models import AuditLog, SecurityAlert
 
-PROTECTED_PREFIXES = ['/reports/']
+PROTECTED_PREFIXES = [
+    '/reports/secure-monthly/',
+    '/reports/tenant-monthly/',
+]
+
 
 class TenantAuthMiddleware:
     def __init__(self, get_response):
@@ -31,7 +40,7 @@ class TenantAuthMiddleware:
 
         user_tenant = payload.get('tenant_id')
         user_id = payload.get('user_id', 'desconocido')
-        resource_tenant = request.GET.get('tenant_id') or path.split('/')[2] if len(path.split('/')) > 2 else None
+        resource_tenant = request.GET.get('tenant_id')
 
         if resource_tenant and user_tenant != resource_tenant:
             elapsed = (time.time() - start) * 1000
@@ -60,4 +69,3 @@ class TenantAuthMiddleware:
         request.user_tenant = user_tenant
         request.user_id = user_id
         return self.get_response(request)
-    
