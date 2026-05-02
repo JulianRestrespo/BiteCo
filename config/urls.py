@@ -23,4 +23,5 @@ urlpatterns = [
     path('', include('reports.urls')),
     path('', include('baselines.urls')),
     path('', include('alerts.urls')),
+    path('security/', include('security.urls')),
 ]

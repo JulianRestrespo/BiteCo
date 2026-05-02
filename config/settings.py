@@ -44,11 +44,13 @@ INSTALLED_APPS = [
     'reports',
     'baselines',
     'alerts',
+    'security',
     
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'security.middleware.TenantAuthMiddleware',  
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -152,3 +154,5 @@ else:
             "LOCATION": "biteco-local-cache",
         }
     }
+
+JWT_SECRET = 'biteco-secret-sprint3'
