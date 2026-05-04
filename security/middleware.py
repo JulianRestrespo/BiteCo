@@ -3,17 +3,10 @@ import jwt
 from django.conf import settings
 from django.http import JsonResponse
 from .models import AuditLog, SecurityAlert
-import time
-import jwt
-from django.conf import settings
-from django.http import JsonResponse
-from .models import AuditLog, SecurityAlert
 
 PROTECTED_PREFIXES = [
-    '/reports/secure-monthly/',
-    '/reports/tenant-monthly/',
+    '/reports/monthly/',
 ]
-
 
 class TenantAuthMiddleware:
     def __init__(self, get_response):
